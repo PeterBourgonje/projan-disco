@@ -3,6 +3,7 @@ import re
 import translate
 import json
 from tqdm import tqdm
+import project
 
 """
 Using data from https://github.com/disrpt/sharedtask2023
@@ -35,11 +36,43 @@ def dump_translation(conllu, out):
     outname = os.path.join('translated', out)
     json.dump(outdict, open(outname, 'w'), indent=2, ensure_ascii=False)
     
+def get_texts_from_sentences(transdict):
+
+    texts = {}
+    src_text, trg_text = [], []
+    dictlen = len(transdict.keys())
+    for i, sid in enumerate(transdict.keys()):
+        sid_int = int(re.match('.*-(\d+)', sid).groups()[0])
+        doc_id = re.match('(.*)-\d+', sid).groups()[0]
+        if i > 0:
+            prev_sid_int = int(re.match('.*-(\d+)', list(transdict.keys())[i-1]).groups()[0])
+            if prev_sid_int > sid_int:
+                prev_doc_id = re.match('(.*)-\d+', list(transdict.keys())[i-1]).groups()[0]
+                texts[prev_doc_id] = (src_text, trg_text)
+                src_text = [transdict[sid]['src']]
+                trg_text = [transdict[sid]['trg']]
+            else:
+                src_text.append(transdict[sid]['src'])
+                trg_text.append(transdict[sid]['trg'])
+        else:
+            src_text = [transdict[sid]['src']]
+            trg_text = [transdict[sid]['trg']]
+    texts[doc_id] = (src_text, trg_text)
+    
+    return texts    
+
 
 def parse_translations(translations):
 
-    parsed = []
-    # TODO: Break up input into texts to feed to discopy. Then re-figure out composing sentences to have reasonable word alignments (as those probably don't work well when feeding the entire src-trg text in one go).
+    parsed = {}
+    texts = get_texts_from_sentences(translations)
+    pd = project.ProjanDisco()
+    for doc_id in texts:
+        src_sents, trg_sents = texts[doc_id]
+        relations = pd.annotate(src_sents[:5], trg_sents[:5])
+        print('doc_id:', doc_id)
+        print('\trelations:', relations)
+        print('\n\n')
  
 
 def main():

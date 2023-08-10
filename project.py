@@ -26,18 +26,23 @@ class ProjanDisco:
         self.init_tokenizer()
 
     def init_tokenizer(self):
-        nlp = spacy.load('xx_sent_ud_sm')
-        self.tokenizer = spacy.tokenizer.Tokenizer(nlp.vocab)
+        self.nlp = spacy.blank('xx')
         
     def annotate(self, inp, trans=False):
-        if not trans:
-            trans = self.translator.translate(inp, 'EN-US')
+    
+        # TODO: think this through (and perhaps decide on only one allowed input type)
+        if isinstance(inp, list):
+            inp = '\n'.join(inp)
+        if isinstance(trans, list):
+            trans = '\n'.join(trans)
         parse = json.loads(self.discopy.parse(trans))
         # discopy seems to change input text (inserting newlines for ex.), so working with RawText coming back from discopy from here
-        trans = parse['text']
+        parse_return_text = parse['text']
+        trans = parse_return_text
         
-        inp_tokenized = self.tokenizer(inp)
-        trans_tokenized = self.tokenizer(trans)
+        # TODO: alignment is now done on the entire text, which is rather unfortunate (probably much more error-prone, plus takes ages on CPU). Would be much better to do this sentence-based (see also if isinstance(inp, list) above, which sort of anticipates on this function either being fed a plain string, or a list of sentences). Cannot count on the number of sentences coming back from discopy to be the same as the number of sentences I'm feeding it though, wait for Rene's answer on this.
+        inp_tokenized = self.nlp(inp)
+        trans_tokenized = self.nlp(trans)
         alignments = self.aligner.align([t.text for t in inp_tokenized], [t.text for t in trans_tokenized])['mwmf']
         inp_t2o = {t.i: (t.idx, t.idx+len(t.text)) for t in inp_tokenized}
         trans_t2o = {t.i: (t.idx, t.idx+len(t.text)) for t in trans_tokenized}
@@ -83,7 +88,7 @@ class ProjanDisco:
         return projected_relations
                     
 def main():
-    # TODO: wrap annotate() in sentence loop
+    
     inp = 'Die Aktienkurse sind seit letztem Monat gestiegen. Obwohl die Wirtschaft allgemein rückläufig ist.'
     pd = ProjanDisco()
     pd.annotate(inp)
