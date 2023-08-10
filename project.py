@@ -29,8 +29,9 @@ class ProjanDisco:
         nlp = spacy.load('xx_sent_ud_sm')
         self.tokenizer = spacy.tokenizer.Tokenizer(nlp.vocab)
         
-    def annotate(self, inp):
-        trans = self.translator.translate(inp, 'EN-US')
+    def annotate(self, inp, trans=False):
+        if not trans:
+            trans = self.translator.translate(inp, 'EN-US')
         parse = json.loads(self.discopy.parse(trans))
         # discopy seems to change input text (inserting newlines for ex.), so working with RawText coming back from discopy from here
         trans = parse['text']
