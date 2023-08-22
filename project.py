@@ -26,29 +26,24 @@ class ProjanDisco:
         self.init_tokenizer()
 
     def init_tokenizer(self):
-        self.nlp = spacy.blank('xx')
-        
-    def annotate(self, inp, trans=False):
+         self.nlp = spacy.blank('xx')
+
+    def annotate(self, inp, trans):
     
-        # TODO: think this through (and perhaps decide on only one allowed input type)
-        if isinstance(inp, list):
-            inp = '\n'.join(inp)
-        if isinstance(trans, list):
-            trans = '\n'.join(trans)
         parse = json.loads(self.discopy.parse(trans))
-        # discopy seems to change input text (inserting newlines for ex.), so working with RawText coming back from discopy from here
-        parse_return_text = parse['text']
-        trans = parse_return_text
-        
-        # TODO: alignment is now done on the entire text, which is rather unfortunate (probably much more error-prone, plus takes ages on CPU). Would be much better to do this sentence-based (see also if isinstance(inp, list) above, which sort of anticipates on this function either being fed a plain string, or a list of sentences). Cannot count on the number of sentences coming back from discopy to be the same as the number of sentences I'm feeding it though, wait for Rene's answer on this.
+        assert trans == parse['text'], "Input text does not match text coming back from discopy. \nInput:\n%s\nDiscopy return text:\n%s" % ('\n'.join(trans), parse['text'])
+
+        # Note that alignments are obtained based on the entire text (not on sentence-by-sentence base, as one normally would).
+        # This takes long (on CPU) and probably has a negative impact on alignment quality. However, we cannot count on
+        # the number of sentences in the translated text to be equal to the number in the source text.
         inp_tokenized = self.nlp(inp)
         trans_tokenized = self.nlp(trans)
         alignments = self.aligner.align([t.text for t in inp_tokenized], [t.text for t in trans_tokenized])['mwmf']
-        inp_t2o = {t.i: (t.idx, t.idx+len(t.text)) for t in inp_tokenized}
-        trans_t2o = {t.i: (t.idx, t.idx+len(t.text)) for t in trans_tokenized}
-        inp_o2t = {(t.idx, t.idx+len(t.text)): t.i for t in inp_tokenized}
-        trans_o2t = {(t.idx, t.idx+len(t.text)): t.i for t in trans_tokenized}
-        
+        inp_t2o = {t.i: (t.idx, t.idx + len(t.text)) for t in inp_tokenized}
+        #trans_t2o = {t.i: (t.idx, t.idx + len(t.text)) for t in trans_tokenized}
+        #inp_o2t = {(t.idx, t.idx + len(t.text)): t.i for t in inp_tokenized}
+        trans_o2t = {(t.idx, t.idx + len(t.text)): t.i for t in trans_tokenized}
+
         projected_relations = []
         if 'relations' in parse:
             relations = parse['relations']
@@ -57,7 +52,7 @@ class ProjanDisco:
                 for elem in relation:
                     if isinstance(relation[elem], dict) and 'CharacterSpanList' in relation[elem] and 'TokenList' in relation[elem]:
                         projected = {'CharacterSpanList': [], 'RawText': '', 'TokenList': []}
-                        src_tokens = []
+                        #src_tokens = []
                         # not guaranteed that tokenization is identical between alignment and discopy, so have to go by char offsets
                         alt_tokens = []
                         for charspan in relation[elem]['CharacterSpanList']:
@@ -90,8 +85,9 @@ class ProjanDisco:
 def main():
     
     inp = 'Die Aktienkurse sind seit letztem Monat gestiegen. Obwohl die Wirtschaft allgemein rückläufig ist.'
+    trans = 'Stock prices have risen since last month. Although the economy is generally declining.' # would normally get this from translator
     pd = ProjanDisco()
-    pd.annotate(inp)
+    pd.annotate(inp, trans)
         
 if __name__ == '__main__':
     main()
