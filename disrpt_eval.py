@@ -4,10 +4,13 @@ import translate
 import json
 from tqdm import tqdm
 import project
+import spacy
 
 """
 Using data from https://github.com/disrpt/sharedtask2023
 """
+
+nlp = spacy.blank('xx')
 
 def conllu2sentences(conllu):
 
@@ -67,13 +70,20 @@ def parse_translations(translations):
     parsed = {}
     texts = get_texts_from_sentences(translations)
     pd = project.ProjanDisco()
-    for doc_id in texts:
+    for doc_id in tqdm(texts, desc="Processing docs"):
         src_sents, trg_sents = texts[doc_id]
-        relations = pd.annotate(src_sents[:5], trg_sents[:5])
-        print('doc_id:', doc_id)
-        print('\trelations:', relations)
-        print('\n\n')
- 
+        # for disrpt, input is pretokenized. Make sure translation is too:
+        trg_sents = [' '.join([t.text for t in nlp(x)]) for x in trg_sents]
+        relations = pd.annotate(src_sents, trg_sents)
+        parsed[doc_id] = relations
+        break
+    return parsed
+    
+def parsed2conllu(infile, parsed):
+    
+    print()
+    
+    
 
 def main():
 	
@@ -82,7 +92,7 @@ def main():
     #dump_translation(infile, outname)
     translations = json.load(open(os.path.join('translated', outname)))
     parsed = parse_translations(translations)
-    
+    parsed2conllu(infile, parsed)
     
     
 	

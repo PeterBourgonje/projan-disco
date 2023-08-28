@@ -25,7 +25,7 @@ class Discopy:
         
 def main():
     dp = Discopy()
-    result = dp.parse('I am going out, because the weather is good')
+    result = dp.parse('I am going out , because the weather is good .')
     print(result)
         
 if __name__ == '__main__':

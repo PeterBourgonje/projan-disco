@@ -2,7 +2,6 @@ import translate
 import align
 import discoparse
 import json
-import spacy
 from operator import itemgetter
 from itertools import groupby
 
@@ -17,32 +16,53 @@ def get_sequences(lst):
         seqs.append((group[0],group[-1]))
     return seqs
 
+def get_token2offsets(sentlist, txt):
+    t2o = {}
+    c_offset = 0
+    ti = 0
+    for sent in sentlist:
+        for t in sent.split():
+            t2o[ti] = (c_offset, c_offset + len(t))
+            assert txt[c_offset:c_offset + len(t)] == t
+            ti += 1
+            c_offset += len(t) + 1
+    return t2o
+
+def get_offsets2token(sentlist, txt):
+    o2t = {}
+    c_offset = 0
+    ti = 0
+    for sent in sentlist:
+        for t in sent.split():
+            o2t[(c_offset, c_offset + len(t))] = ti
+            assert txt[c_offset:c_offset + len(t)] == t
+            ti += 1
+            c_offset += len(t) + 1
+    return o2t
+
 class ProjanDisco:
 
     def __init__(self):
         self.translator = translate.Translator()
         self.aligner = align.Aligner()
         self.discopy = discoparse.Discopy()
-        self.init_tokenizer()
-
-    def init_tokenizer(self):
-         self.nlp = spacy.blank('xx')
 
     def annotate(self, inp, trans):
-    
-        parse = json.loads(self.discopy.parse(trans))
-        assert trans == parse['text'], "Input text does not match text coming back from discopy. \nInput:\n%s\nDiscopy return text:\n%s" % ('\n'.join(trans), parse['text'])
 
-        # Note that alignments are obtained based on the entire text (not on sentence-by-sentence base, as one normally would).
-        # This takes long (on CPU) and probably has a negative impact on alignment quality. However, we cannot count on
-        # the number of sentences in the translated text to be equal to the number in the source text.
-        inp_tokenized = self.nlp(inp)
-        trans_tokenized = self.nlp(trans)
-        alignments = self.aligner.align([t.text for t in inp_tokenized], [t.text for t in trans_tokenized])['mwmf']
-        inp_t2o = {t.i: (t.idx, t.idx + len(t.text)) for t in inp_tokenized}
-        #trans_t2o = {t.i: (t.idx, t.idx + len(t.text)) for t in trans_tokenized}
-        #inp_o2t = {(t.idx, t.idx + len(t.text)): t.i for t in inp_tokenized}
-        trans_o2t = {(t.idx, t.idx + len(t.text)): t.i for t in trans_tokenized}
+        assert isinstance(inp, list)
+        assert isinstance(trans, list)
+        parse_input = ' '.join(trans)
+        orig_input = ' '.join(inp)
+        parse = json.loads(self.discopy.parse(parse_input))
+        assert parse_input == parse['text'], "Input text does not match text coming back from discopy. \nInput:\n%s\nDiscopy return text:\n%s" % ('\n'.join(trans), parse['text'])
+
+        # Since translation is done sentence-by-sentence, number of sentences in srg and trg text should be the same
+        assert len(inp) == len(trans)
+        # Note that input is assumed to be pretokenized (white-space tokenized).
+        inp_t2o = get_token2offsets(inp, orig_input)
+        trans_o2t = get_offsets2token(trans, parse_input)
+
+        alignments = self.aligner.align_sentences(inp, trans)
 
         projected_relations = []
         if 'relations' in parse:
@@ -67,13 +87,15 @@ class ProjanDisco:
                             if is_continuous(aligned_tokens):
                                 s, e = inp_t2o[aligned_tokens[0]][0], inp_t2o[aligned_tokens[-1]][1]
                                 projected['CharacterSpanList'] = [[s, e]]
-                                projected['RawText'] = inp[s:e]
+                                #projected['RawText'] = inp[s:e]
+                                projected['RawText'] = orig_input[s:e]
                             else:
                                 seqs = get_sequences(aligned_tokens)
                                 for seq in seqs:
                                     s, e = inp_t2o[seq[0]][0], inp_t2o[seq[-1]][1]
                                     projected['CharacterSpanList'].append([s, e])
-                                    projected['RawText'] += ' ' + inp[s:e]
+                                    #projected['RawText'] += ' ' + inp[s:e]
+                                    projected['RawText'] += ' ' + orig_input[s:e]
                                 projected['RawText'] = projected['RawText'].strip()
                         prel[elem] = projected
                     else:
