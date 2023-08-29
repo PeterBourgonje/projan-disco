@@ -9,14 +9,14 @@ docker run -it --rm  -p 8080:8080 rknaebel/discopy:1.0
 class Discopy:
 
     def __init__(self):
-        self.url = "http://localhost:8080/api/parser"
+        self.url = "http://localhost:8080/api/parser/tokens"
         self.headers = {
             'accept': 'application/json',
             'Content-Type': 'application/json'
         }
 
-    def parse(self, txt):
-        data = json.dumps({'text': txt})
+    def parse(self, sentences):
+        data = json.dumps({'sentences': sentences})
         try:
             response = requests.request("POST", self.url, headers=self.headers, data=data)
             return response.text

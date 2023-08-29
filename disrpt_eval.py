@@ -72,8 +72,8 @@ def parse_translations(translations):
     pd = project.ProjanDisco()
     for doc_id in tqdm(texts, desc="Processing docs"):
         src_sents, trg_sents = texts[doc_id]
-        # for disrpt, input is pretokenized. Make sure translation is too:
-        trg_sents = [' '.join([t.text for t in nlp(x)]) for x in trg_sents]
+        src_sents = [s.split() for s in src_sents]
+        trg_sents = [s.split() for s in trg_sents]
         relations = pd.annotate(src_sents, trg_sents)
         parsed[doc_id] = relations
         break
@@ -83,10 +83,9 @@ def parsed2conllu(infile, parsed):
     
     print()
     
-    
 
 def main():
-	
+
     infile = r"..\sharedtask2023\data\por.pdtb.crpc\por.pdtb.crpc_test.conllu"
     outname = 'por.pdtb.crpc_test.pt-en.json'
     #dump_translation(infile, outname)
@@ -94,7 +93,6 @@ def main():
     parsed = parse_translations(translations)
     parsed2conllu(infile, parsed)
     
-    
-	
+
 if __name__ == '__main__':
-	main()
+    main()
