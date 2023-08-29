@@ -1,5 +1,9 @@
 from simalign import SentenceAligner
 from tqdm import tqdm
+import requests
+
+# This is where we want to insert Muhammed's align voting endpoint...
+api_url = 'https://dcc9-134-96-105-142.ngrok-free.app/align'
 
 """
 Class to align words, given source and target sentence. Currently only simalign (https://github.com/cisnlp/simalign) implemented, but will want to try out others here.
@@ -30,6 +34,20 @@ def main():
     al = Aligner()
     alignments = al.align(src_sentence, trg_sentence)
     print(alignments)
+
+    src_sentence = "This is a test ."
+    trg_sentence = "Das ist ein Test ."
+    data = {
+        "src_sentence": src_sentence,
+        "trg_sentence": trg_sentence
+    }
+    response = requests.post(api_url, json=data)
+    if response.status_code == 200:
+        result = response.json()
+        mwmf_alignments = result.get('mwmf_alignments')
+        print("MWMF Alignments:", mwmf_alignments)
+    else:
+        print("Error:", response.text)
 
 if __name__ == '__main__':
     main()
