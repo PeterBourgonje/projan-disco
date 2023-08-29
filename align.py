@@ -20,7 +20,7 @@ class Aligner:
         alignments = []
         tid_src = 0
         tid_trg = 0
-        for src, trg in tqdm(list(zip(src_sentences, trg_sentences)), desc="\tAligning sentences"):
+        for src, trg in zip(src_sentences, trg_sentences):
             aligned = self.align(src, trg)['mwmf']
             re_aligned = [(x[0]+tid_src, x[1]+tid_trg) for x in aligned]
             tid_src += len(src)

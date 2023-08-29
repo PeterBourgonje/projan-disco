@@ -4,13 +4,11 @@ import translate
 import json
 from tqdm import tqdm
 import project
-import spacy
 
 """
 Using data from https://github.com/disrpt/sharedtask2023
 """
 
-nlp = spacy.blank('xx')
 
 def conllu2sentences(conllu):
 
@@ -38,7 +36,8 @@ def dump_translation(conllu, out):
         os.mkdir('translated')
     outname = os.path.join('translated', out)
     json.dump(outdict, open(outname, 'w'), indent=2, ensure_ascii=False)
-    
+
+
 def get_texts_from_sentences(transdict):
 
     texts = {}
@@ -76,12 +75,52 @@ def parse_translations(translations):
         trg_sents = [s.split() for s in trg_sents]
         relations = pd.annotate(src_sents, trg_sents)
         parsed[doc_id] = relations
-        break
+
     return parsed
-    
+
+
 def parsed2conllu(infile, parsed):
-    
-    print()
+
+    docid2connectives = {}
+    docid2condebug = {}
+    for docid in parsed:
+        connectives = {}
+        condebug = {}
+        for rel in parsed[docid]:
+            if rel['Type'] == 'Explicit':
+                ckey = rel['Connective']['TokenList'][0]
+                connectives[ckey] = rel['Connective']['TokenList']
+                condebug[ckey] = rel['Connective']['RawText'].split()[0]
+        docid2connectives[docid] = connectives
+        docid2condebug[docid] = condebug
+
+    outfile = open(os.path.splitext(infile)[0] + '_discopyrojected.conllu', 'w')
+    lines = open(infile).readlines()
+    lines = [re.sub('Seg=[BI]-Conn', '_', x) for x in lines]  # strip all existing annotations
+    curdict = None
+    curdebdict = None
+    tc = 0
+    for i, line in enumerate(lines):
+        if re.search(r'^# newdoc_id = ', line):
+            docid = re.sub(r'^# newdoc_id = ', '', line).strip()
+            if docid in docid2connectives:
+                curdict = docid2connectives[docid]
+                curdebdict = docid2condebug[docid]
+                tc = 0
+            else:
+                break
+        if re.search(r'^\d+\t', line):
+            if tc in curdict:
+                assert line.split('\t')[1] == curdebdict[tc]
+                lines[i] = '\t'.join(lines[i].split('\t')[:-1] + ['Seg=B-Conn\n'])
+                if len(curdict[tc]) > 1:
+                    for j, nt in enumerate(curdict[tc][1:]):
+                        # TODO: test if the line below works alright!
+                        lines[i+j+1] = '\t'.join(lines[i+j+1].split('\t')[:-1] + ['Seg=I-Conn\n'])
+            tc += 1
+    for line in lines:
+        outfile.write(line)
+    outfile.close()
     
 
 def main():
