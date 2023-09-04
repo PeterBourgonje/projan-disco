@@ -115,7 +115,6 @@ def parsed2conllu(infile, parsed):
                 lines[i] = '\t'.join(lines[i].split('\t')[:-1] + ['Seg=B-Conn\n'])
                 if len(curdict[tc]) > 1:
                     for j, nt in enumerate(curdict[tc][1:]):
-                        # TODO: test if the line below works alright!
                         lines[i+j+1] = '\t'.join(lines[i+j+1].split('\t')[:-1] + ['Seg=I-Conn\n'])
             tc += 1
     for line in lines:
