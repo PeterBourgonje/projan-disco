@@ -11,6 +11,35 @@ class ProjanDisco:
         self.aligner = align.Aligner()
         self.discopy = discoparse.Discopy()
 
+    def merge_batches(self, batches):
+        response = {'docID': batches[-1]['docID'], 'meta': batches[-1]['meta'],
+                    'text': '\n'.join(b['text'] for b in batches), 'sentences': [], 'relations': []}
+        sentences = []
+        relations = []
+        c_offset = 0
+        t_offset = 0
+        for batch in batches:
+            for s in batch['sentences']:
+                # the CharacterOffsets are not really informative (and not used for alignment) in this /tokens endpoint,
+                # but implementing batch-wise increment here in case they are corrected in some future version.
+                s['tokens'] = [{'surface': t['surface'], 'characterOffsetBegin': t['characterOffsetBegin']+c_offset,
+                                'characterOffsetEnd': t['characterOffsetEnd']+c_offset, 'upos': t['upos'],
+                                'xpos': t['xpos'], 'lemma': t['lemma']} for t in s['tokens']]
+                sentences.append(s)
+            for r in batch['relations']:
+                r['Arg1']['CharacterSpanList'] = [[c+c_offset for spanlist in r['Arg1']['CharacterSpanList'] for c in spanlist]]
+                r['Arg1']['TokenList'] = [t + t_offset for t in r['Arg1']['TokenList']]
+                r['Arg2']['CharacterSpanList'] = [[c+c_offset for spanlist in r['Arg2']['CharacterSpanList'] for c in spanlist]]
+                r['Arg2']['TokenList'] = [t + t_offset for t in r['Arg2']['TokenList']]
+                r['Connective']['CharacterSpanList'] = [[c+c_offset for spanlist in r['Connective']['CharacterSpanList'] for c in spanlist]]
+                r['Connective']['TokenList'] = [t + t_offset for t in r['Connective']['TokenList']]
+                relations.append(r)
+            c_offset += batch['sentences'][-1]['tokens'][-1]['characterOffsetEnd'] + 1  # joining on newline, so adding one more...
+            t_offset += sum(len(s['tokens']) for s in batch['sentences'])
+        response['sentences'] = sentences
+        response['relations'] = relations
+        return response
+
     def annotate(self, inp, trans):
 
         # checking that input is pre-sentencized and pre-tokenized
@@ -18,6 +47,18 @@ class ProjanDisco:
         assert isinstance(trans, list)
         assert all(isinstance(x, list) for x in inp)
         assert all(isinstance(x, list) for x in trans)
+        # Code below is to parse batch-wise (pretty rudimentary though, not cascaded), but didn't solve my memory issue. 
+        # Perhaps token-based (some individual sentence being too long for bert?) 
+        #batch_size = 1000
+        #prev_index = 0
+        #parsed_batches = []
+        #for batch_index in range(batch_size, len(trans), batch_size):
+            #batch = trans[prev_index:batch_index]
+            #parsed_batches.append(json.loads(self.discopy.parse(batch)))
+            #prev_index = batch_index
+        #final_batch = trans[prev_index:len(trans)]
+        #parsed_batches.append(json.loads(self.discopy.parse(final_batch)))
+        #discopy_response = self.merge_batches(parsed_batches)
         discopy_response = json.loads(self.discopy.parse(trans))
 
         # Since translation is done sentence-by-sentence, number of sentences in srg and trg text should be the same
