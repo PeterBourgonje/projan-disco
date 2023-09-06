@@ -86,6 +86,8 @@ class ProjanDisco:
                 for elem in relation:
                     # ignoring CharacterSpanList altogether
                     if isinstance(relation[elem], dict) and 'TokenList' in relation[elem]:
+                        # TODO: suspect this might instead need to be the line below instead of what's currently active.
+                        # aligned_tokens = [[a[1] for a in alignments if a[0] == t] for t in relation[elem]['TokenList']]
                         aligned_tokens = [[a[0] for a in alignments if a[1] == t] for t in relation[elem]['TokenList']]
                         aligned_tokens = sorted(list(set([t for tl in aligned_tokens for t in tl])))
                         rawtext = ' '.join([id2token[i] for i in aligned_tokens]).strip()
