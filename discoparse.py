@@ -4,7 +4,7 @@ import sys
 
 """
 This assumes a container for discopy (https://github.com/rknaebel/discopy) to be running at localhost:8080:
-docker run -it --rm  -p 8080:8080 rknaebel/discopy:1.0
+docker run -it --rm  -p 8080:8080 rknaebel/discopy:1.0.2
 """
 
 class Discopy:
@@ -33,7 +33,7 @@ class Discopy:
         
 def main():
     dp = Discopy()
-    result = dp.parse('I am going out , because the weather is good .')
+    result = dp.parse(['I am going out.'.split(), 'Because the weather is good .'.split()])
     print(result)
         
 if __name__ == '__main__':
