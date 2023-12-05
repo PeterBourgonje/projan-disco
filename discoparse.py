@@ -76,6 +76,7 @@ class Discopy:
 def main():
     dp = Discopy()
     result = dp.parse(['I am going out.'.split(), 'Because the weather is good .'.split()])
+    result = dp.parse(["There's smoke in my iris.".split(), "But I painted a sunny day on the inside of my eyelids.".split()])
     print(result)
         
 if __name__ == '__main__':

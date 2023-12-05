@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import translate
 import json
 from tqdm import tqdm
@@ -22,10 +23,72 @@ def conllu2sentences(conllu):
     return sentences
 
 
-def dump_translation(conllu, out):
+def conll2sentences_nonmarked(conllu):
+    sentences = {}
+    lines = open(conllu, encoding='utf8').readlines()
+    """
+    Use this fuction if sentences are not marked at all (i.e. newline is the only clue) on the conllu format, like so:
+    18	网络	网络	NN	NN	_	19	nn	_	_
+    19	招生	招生	NN	NN	_	17	pobj	_	_
+
+    1	新华社	新华社	NR	NR	_	7	dep	_	_
+    2	福州	福州	NR	NR	_	7	dep	_	_
+    3	十二月	十二月	NT	NT	_	7	dep	_	_
+    """
+    sent = []
+    _id = 0
+    for i, line in enumerate(lines):
+        if re.match(r'^\s+', line):
+            sentences[_id] = ' '.join(sent)
+            sent = []
+            _id += 1
+        elif re.search(r'^\d+\t', line):
+            t = line.split('\t')[1]
+            sent.append(t)
+
+    return sentences
+
+
+def conllu2sentences_somewhatmarked(conllu):
+
+    sentences = {}
+    lines = open(conllu, encoding='utf8').readlines()
+    """
+    Use this fuction if sentences are not explicitly marked in the conllu format, like so:
+    # newutterance_id = 0705000001-3-2
+    1	dicevamo	dire	VERB	V	Mood=Ind|Number=Plur|Person=1|Tense=Pres|VerbForm=Fin	7	conj	7:conj	_
+    2	che	che	SCONJ	CS	_	12	mark	12:mark	_
+    3	hai	avere	VERB	V	Mood=Ind|Number=Sing|Person=2|Tense=Pres|VerbForm=Fin	10	ccomp	10:ccomp	_
+    4	problemi	problema	NOUN	S	Gender=Masc|Number=Plur	12	obj	12:obj	_
+    5	di	di	ADP	E	_	15	mark	15:mark	_
+    """
+    sent = []
+    _id = ''
+    for i, line in enumerate(lines):
+        if re.search(r'^# newutterance_id', line):
+            sentences[_id] = ' '.join(sent)
+            sent = []
+            _id = re.sub(r'^# newutterance_id = ', '', line).strip()
+        elif re.search(r'^\d+\t', line):
+            t = line.split('\t')[1]
+            sent.append(t)
+
+    return sentences
+
+
+def dump_translation(conllu, out, format):
 
     assert os.path.exists(conllu)
-    sentences = conllu2sentences(conllu)
+    sentences = None
+    if format == 'marked':
+        sentences = conllu2sentences(conllu)
+    elif format == 'somewhat_marked':
+        sentences = conllu2sentences_somewhatmarked(conllu)
+    elif format == 'non_marked':
+        sentences = conll2sentences_nonmarked(conllu)
+    else:
+        sys.stderr.write('ERROR: Format "%s" unknown.\n' % format)
+        sys.exit()
     translator = translate.Translator()
     outdict = {}
     targetlang = 'EN-US'
@@ -124,12 +187,20 @@ def parsed2conllu(infile, parsed):
 
 def main():
 
-    infile = r"..\sharedtask2023\data\por.pdtb.crpc\por.pdtb.crpc_test.conllu"
-    outname = 'por.pdtb.crpc_test.pt-en.json'
-    #dump_translation(infile, outname)
-    translations = json.load(open(os.path.join('translated', outname)))
-    parsed = parse_translations(translations)
-    parsed2conllu(infile, parsed)
+    #infile = r"..\sharedtask2023\data\por.pdtb.crpc\por.pdtb.crpc_test.conllu"
+    #outname = 'por.pdtb.crpc_test.pt-en.json'
+    #dump_translation(infile, outname, 'marked')
+    #infile = r"C:\Users\bourg\Desktop\various\disco-stringmatcher\projan_experiments\data\zho.pdtb.cdtb_test.conllu"
+    #outname = 'zho.pdtb.cdtb_test.zh-en.json'
+    #dump_translation(infile, outname, 'non_marked')
+
+    infile = r"..\sharedtask2023\data\ita.pdtb.luna\ita.pdtb.luna_test.conllu"
+    outname = 'ita.pdtb.luna_test.zh-en.json'
+    dump_translation(infile, outname, 'somewhat_marked')
+
+    #translations = json.load(open(os.path.join('translated', outname)))
+    #parsed = parse_translations(translations)
+    #parsed2conllu(infile, parsed)
     
 
 if __name__ == '__main__':
