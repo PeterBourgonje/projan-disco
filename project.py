@@ -8,7 +8,8 @@ class ProjanDisco:
 
     def __init__(self):
         self.translator = translate.Translator()
-        self.aligner = align.Aligner()
+        #self.aligner = align.Aligner('simalign')
+        self.aligner = align.Aligner('awesome')
         self.discopy = discoparse.Discopy()
 
     def merge_batches(self, batches):
@@ -105,7 +106,8 @@ def main():
     inp = ['Die Aktienkurse sind seit letztem Monat gestiegen .'.split(), 'Obwohl die Wirtschaft allgemein rückläufig ist .'.split()]
     trans = ['Stock prices have risen since last month .'.split(), 'Although the economy is generally declining .'.split()] # would normally get this from translator
     pd = ProjanDisco()
-    pd.annotate(inp, trans)
+    projected = pd.annotate(inp, trans)
+    print(projected)
 
 
 if __name__ == '__main__':
