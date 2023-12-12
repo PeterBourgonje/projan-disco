@@ -3,11 +3,15 @@ import align
 import discoparse
 import json
 
+import time
+from pprint import pprint
+
+
 
 class ProjanDisco:
-
-    def __init__(self):
-        self.translator = translate.Translator()
+    def __init__(self, translator_name="deepl"):
+        # self.translator = translate.Translator(translator_name=translator_name)
+        self.translator = translate.AutoTranslator.get(translator_name=translator_name)
         self.aligner = align.Aligner()
         self.discopy = discoparse.Discopy()
 
@@ -41,7 +45,11 @@ class ProjanDisco:
         return response
 
     def annotate(self, inp, trans):
+        """Perform calling API and align 
 
+        args:
+          inp (list of list)
+        """
         # checking that input is pre-sentencized and pre-tokenized
         assert isinstance(inp, list)
         assert isinstance(trans, list)
@@ -59,17 +67,49 @@ class ProjanDisco:
         #final_batch = trans[prev_index:len(trans)]
         #parsed_batches.append(json.loads(self.discopy.parse(final_batch)))
         #discopy_response = self.merge_batches(parsed_batches)
-        discopy_response = json.loads(self.discopy.parse(trans))
+        
+        inp_tmp = [ " ".join(s) for s in trans]
+        inp_tmp = trans
+        discopy_result   = self.discopy.parse(inp_tmp)
+        discopy_response = json.loads(discopy_result)
+        print(f"num of inp, {len(inp)}")
+        print(f"inp_tmp: {inp_tmp}")
+        print(f"type(trans): {type(trans)}")
+        print(f"type(discopy_result): {type(discopy_result)}")
+
+        rel = discopy_response["relations"]
+        pprint(f"orgin relations in response\n {rel}")
+        print(f"num of response {len(rel)}")
+
+        ###
+        # testing
+        ###
+        # exm =  """{
+        # "name": "John Doe",
+        # "age": 30,
+        # "city": "New York"
+        # }"""
+        # discopy_response = json.loads(exm)
 
         # Since translation is done sentence-by-sentence, number of sentences in srg and trg text should be the same
         assert len(inp) == len(trans)
+        print("ProjanDisco", )
         alignments = self.aligner.align_sentences(inp, trans)
         id2token = {}
         tid = 0
         for sent in inp:
+            print("sent in inp", sent)
             for token in sent:
+                print("token in given sent", token)
+                print("token id", token)
                 id2token[tid] = token
                 tid += 1
+        print(f"inp: {inp}")
+        print(f"trans: {trans}")
+
+        pprint(f"discopy_response: {discopy_response}")
+        print(f"alignments: {alignments}")
+        print(f"id2token", id2token)
         """
         trans_id2token = {}  # for debugging purposes
         tid = 0
@@ -81,23 +121,40 @@ class ProjanDisco:
         projected_relations = []
         if 'relations' in discopy_response:
             relations = discopy_response['relations']
+            print(f"len(relations): {relations}")
+
             for relation in relations:
                 prel = {}
                 for elem in relation:
+                    print("elem", elem)
+                    print("relation[ele]", relation[elem])
                     # ignoring CharacterSpanList altogether
                     if isinstance(relation[elem], dict) and 'TokenList' in relation[elem]:
+                        print("relation[elem]",relation[elem])
+                        print("relation[elem]['TokenList']", relation[elem]['TokenList'])
                         # TODO: suspect this might instead need to be the line below instead of what's currently active.
                         # aligned_tokens = [[a[1] for a in alignments if a[0] == t] for t in relation[elem]['TokenList']]
                         aligned_tokens = [[a[0] for a in alignments if a[1] == t] for t in relation[elem]['TokenList']]
+                        
                         aligned_tokens = sorted(list(set([t for tl in aligned_tokens for t in tl])))
+                        print("sorted aligned_tokens", aligned_tokens)
                         rawtext = ' '.join([id2token[i] for i in aligned_tokens]).strip()
+
+                        # here: we got empty lists for these 
                         projected = {'RawText': rawtext, 'TokenList': aligned_tokens}
+                        print("id2token", id2token)
+                        print("rawtext", rawtext)
+                        print("aligned_tokens",aligned_tokens)
+                        # assert len(rawtext) != 0
+                        # assert len(aligned_tokens) != 0
                         prel[elem] = projected
                     else:
                         prel[elem] = relation[elem]
                 projected_relations.append(prel)
-        
+        print(f"projected_relations: {projected_relations}")
         return projected_relations
+
+
 
 
 def main():

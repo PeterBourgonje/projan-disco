@@ -10,7 +10,7 @@ docker run -it --rm  -p 8080:8080 rknaebel/discopy:1.0
 class Discopy:
 
     def __init__(self):
-        self.url = "http://localhost:8080/api/parser/tokens"
+        self.url = "http://localhost:1133/api/parser/tokens"
         self.headers = {
             'accept': 'application/json',
             'Content-Type': 'application/json'
@@ -25,6 +25,7 @@ class Discopy:
 
     def parse(self, sentences):
         data = json.dumps({'sentences': sentences})
+        print(f"data: {data}")
         try:
             response = requests.request("POST", self.url, headers=self.headers, data=data)
             return response.text
@@ -33,7 +34,12 @@ class Discopy:
         
 def main():
     dp = Discopy()
-    result = dp.parse('I am going out , because the weather is good .')
+    #result = dp.parse([ 'I am going out , because the weather is good .'.split() ])
+    sent = 'I am going out. Because the weather is good.'
+    sent1 = "Terry L. Haines , formerly general manager of Canadian operations , was elected to the new position of vice president , North American sales , of the plastics concern ."
+    sent2 = "Also , Larry A. Kushkin , executive vice president , North American operations , was named head of the company's international automotive operations , another new position ."
+    # result = dp.parse([ (sent2).split() ])
+    result = dp.parse(['Because, the weather is good .'.split()])
     print(result)
         
 if __name__ == '__main__':
