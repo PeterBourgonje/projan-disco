@@ -2,6 +2,7 @@ import translate
 import align
 import discoparse
 import json
+import spacy
 
 
 class ProjanDisco:
@@ -102,11 +103,23 @@ class ProjanDisco:
 
 
 def main():
-    
+
+    """
     inp = ['Die Aktienkurse sind seit letztem Monat gestiegen .'.split(), 'Obwohl die Wirtschaft allgemein rückläufig ist .'.split()]
     trans = ['Stock prices have risen since last month .'.split(), 'Although the economy is generally declining .'.split()] # would normally get this from translator
     pd = ProjanDisco()
     projected = pd.annotate(inp, trans)
+    print(projected)
+    """
+    nlp_de = spacy.load('de_core_news_sm')
+    trans = translate.Translator()
+
+    input_text = 'Die Aktienkurse sind seit letztem Monat gestiegen. Obwohl die Wirtschaft allgemein rückläufig ist.'
+
+    src_sentences = [[t.text for t in s] for s in nlp_de(input_text).sents]
+    trg_sentences = [trans.translate(' '.join(s), 'EN-US').split() for s in src_sentences]
+    pd = ProjanDisco()
+    projected = pd.annotate(src_sentences, trg_sentences)
     print(projected)
 
 

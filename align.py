@@ -6,8 +6,6 @@ from tqdm import tqdm
 import requests
 import sys
 
-# This is where we want to insert Muhammed's align voting endpoint...
-api_url = 'https://dcc9-134-96-105-142.ngrok-free.app/align'
 
 """
 Class to align words, given source and target sentence.
