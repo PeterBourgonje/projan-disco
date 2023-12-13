@@ -95,9 +95,9 @@ def dump_translation(conllu, out, format):
     for sid in tqdm(sentences, desc='Translating'):
         translation = translator.translate(sentences[sid], targetlang)
         outdict[sid] = {'src': sentences[sid], 'trg': translation}
-    if not os.path.exists('translated'):
-        os.mkdir('translated')
-    outname = os.path.join('translated', out)
+    if not os.path.exists('../translated'):
+        os.mkdir('../translated')
+    outname = os.path.join('../translated', out)
     json.dump(outdict, open(outname, 'w'), indent=2, ensure_ascii=False)
 
 
@@ -194,9 +194,14 @@ def main():
     #outname = 'zho.pdtb.cdtb_test.zh-en.json'
     #dump_translation(infile, outname, 'non_marked')
 
-    infile = r"..\sharedtask2023\data\ita.pdtb.luna\ita.pdtb.luna_test.conllu"
-    outname = 'ita.pdtb.luna_test.zh-en.json'
-    dump_translation(infile, outname, 'somewhat_marked')
+    #infile = r"..\sharedtask2023\data\ita.pdtb.luna\ita.pdtb.luna_test.conllu"
+    #outname = 'ita.pdtb.luna_test.zh-en.json'
+    #dump_translation(infile, outname, 'somewhat_marked')
+
+    infile = r"..\sharedtask2023\data\por.pdtb.tedm\por.pdtb.tedm_test.conllu"
+    outname = 'por.pdtb.tedm_test.pt-en.json'
+    dump_translation(infile, outname, 'marked')
+
 
     #translations = json.load(open(os.path.join('translated', outname)))
     #parsed = parse_translations(translations)
