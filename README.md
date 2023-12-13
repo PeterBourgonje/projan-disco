@@ -36,7 +36,7 @@ trg_sentences = [trans.translate(' '.join(s), 'EN-US').split() for s in src_sent
 projected = pd.annotate(src_sentences, trg_sentences)
 
 import json
-print(json.dumps(projected, indent=2))
+print(json.dumps(projected, indent=2, ensure_ascii=False))
 ```
 This snippet would return:
 ```
