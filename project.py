@@ -88,7 +88,6 @@ class ProjanDisco:
                 for elem in relation:
                     # ignoring CharacterSpanList altogether
                     if isinstance(relation[elem], dict) and 'TokenList' in relation[elem]:
-                        # TODO: suspect this might instead need to be the line below instead of what's currently active.
                         # aligned_tokens = [[a[1] for a in alignments if a[0] == t] for t in relation[elem]['TokenList']]
                         aligned_tokens = [[a[0] for a in alignments if a[1] == t] for t in relation[elem]['TokenList']]
                         aligned_tokens = sorted(list(set([t for tl in aligned_tokens for t in tl])))
@@ -114,7 +113,7 @@ def main():
     nlp_de = spacy.load('de_core_news_sm')
     trans = translate.Translator()
 
-    input_text = 'Die Aktienkurse sind seit letztem Monat gestiegen. Obwohl die Wirtschaft allgemein rückläufig ist.'
+    input_text = 'Obwohl die Wirtschaft allgemein rückläufig ist, sind die Aktienkurse seit letztem Monat gestiegen.'
 
     src_sentences = [[t.text for t in s] for s in nlp_de(input_text).sents]
     trg_sentences = [trans.translate(' '.join(s), 'EN-US').split() for s in src_sentences]
