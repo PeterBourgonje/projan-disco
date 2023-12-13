@@ -13,6 +13,10 @@ Also, you'll need a working API key for the translation API of your choice. Expo
 ```
 export DEEPL_API_KEY=your-own-personal-deepl-key...
 ```
+Lastly, you'll need to install the requirements:
+```
+pip install -r requirements.txt
+```
 
 # Usage
 Once the above prerequisites are met, the pipeline can be used like so (see also ```main``` in ```project.py```):
