@@ -38,18 +38,34 @@ class AbstractTask(abc.ABC):
     def __init__(self):
         pass
     
-
-    def _remove_line_start_with_two_token(sentences):
+    def _remove_line_start_with_two_token(self, sentences):
         """
           sentences: List of sentences (str)
         """
         # Remove the line started with `7-8 arasındaki ...` ""
         matches = list()
-        for l in lines:
-            if re.search(r"\d+-\d+", l):
+        for l in sentences:
+            if re.search(r"^\d+-\d+", l):
                 pass
             else:
                 matches.append(l)
+
+        for l in matches:
+            if l == "\n":
+                pass
+            elif l.startswith("# sent_id ="):
+                pass
+            elif l.startswith("# newdoc id ="):
+                pass
+            elif l.startswith("# text ="):
+                pass
+            else:
+                if len(l.split("\t")) !=10:
+                    print(f"line: {l}")
+                    
+        with open("test.txt", "w") as wf:
+            wf.write("".join(matches))
+
         return matches
 
     # Use parse() to parse into a list of sentences
@@ -60,7 +76,7 @@ class AbstractTask(abc.ABC):
         # This might make string can be parsed property.
         # matches = "\n".join([ l for l in lines if re.search(r"\d+-\d+") != True])
     
-        matches = _remove_line_start_with_two_token(lines)
+        matches = self._remove_line_start_with_two_token(lines)
         matches = "".join(matches)
          
         # matches = re.sub(r"\n(\d+-\d+\t.*)\n", "", lines)
@@ -91,6 +107,7 @@ class AbstractTask(abc.ABC):
         # get the list of tokens for each examples
         for sent in sents:
 
+            print("sent", sent)
             sent_id = sent.metadata["sent_id"]
             doc_id = re.match(doc_id_pattern, sent_id).groups()[0]
             print("doc_id", doc_id)
@@ -99,6 +116,8 @@ class AbstractTask(abc.ABC):
             tokens  = [obj["form"] for obj in sent]
             tok_ids = [obj["id"]   for obj in sent]
             
+            print("tokens",tokens)
+            print("tok_ids",tok_ids)
             if doc_id not in texts:
                 texts[doc_id] = [tokens]
             else:
@@ -112,21 +131,12 @@ class AbstractTask(abc.ABC):
         """Return the `sentences`. 
 
         """
-        # sentences = {}
-        # lines = open(conllu).readlines()
-        # for i, line in enumerate(lines):
-        #     line = line.strip()
-        #     if re.search('^# text = ', line):
-        #         sent = re.sub('^# text = ', '', line)
-        #         sentences[re.sub('^# sent_id = ', '', lines[i-1]).strip()] = sent
-        # return sentences
-
         lines = open(conllu).readlines()
 
-        matches = _remove_line_start_with_two_token(lines)
+        matches = self._remove_line_start_with_two_token(lines)
         matches = "".join(matches)
-        
-        matches = re.sub(r"\n(\d+-\d+\t.*\n)", "", lines)
+
+        # matches = re.sub(r"\n(\d+-\d+\t.*\n)", "", lines)
         sents = conllu_pkg.parse(matches)
         
         doc_id = None
@@ -151,10 +161,13 @@ class ItaTdtbLunaProcessor(AbstractTask):
     sent_id_prefix = "newutterance"
     
     def conllu_to_parsed_sentences(self, conllu):
-        lines = open(conllu).read()    
-        matches = re.sub(r"\n(\d+-\d+\t.*)\n", "", lines)
-        sents = conllu_pkg.parse(matches)
-        
+        lines = open(conllu).readlines() 
+        # matches = re.sub(r"\n(\d+-\d+\t.*)\n", "", lines)
+        matches = self._remove_line_start_with_two_token(lines)
+        matches = "".join(matches)
+
+        sents = conllu_pkg.parse(matches)        
+
         doc_id = None
         for sent in sents:
             if self.doc_id_prefix in sent.metadata:
@@ -170,8 +183,10 @@ class ItaTdtbLunaProcessor(AbstractTask):
 
     def get_conllu2sentences(self, conllu):
         """"""
-        lines = open(conllu).read()    
-        matches = re.sub(r"\n(\d+-\d+\t.*\n)", "", lines)
+        lines = open(conllu).readlines() 
+        # matches = re.sub(r"\n(\d+-\d+\t.*\n)", "", lines)
+        matches = self._remove_line_start_with_two_token(lines)
+        matches = "".join(matches)
         sents = conllu_pkg.parse(matches)
         
         doc_id = None
@@ -199,10 +214,9 @@ class ItaTdtbLunaProcessor(AbstractTask):
 
 class PorPdtbCrpcProcessor(AbstractTask):
     pass
-
+     
 class PorPdtbTedmProcessor(AbstractTask):
     pass    
-
 
 class ThaPdtbTdtbProcessor(AbstractTask):
     pass    
@@ -214,10 +228,16 @@ class TurPdtbTdbProcessor(AbstractTask):
     def conllu_to_parsed_sentences(self, conllu):
         # remove the line with adjacent tokens
         #   exmaple: 7-8 arasındaki _ _ ..
-        lines = open(conllu).read()    
-        matches = re.sub(r"\n(\d+-\d+\t.*\n)", "", lines)
-        sents = conllu_pkg.parse(matches)
+        lines = open(conllu).readlines()   
         
+        matches = self._remove_line_start_with_two_token(lines)
+        matches = "".join(matches)
+
+        # matches = re.sub(r"\n(\d+-\d+\t.*\n)", "", lines)
+        sents = conllu_pkg.parse(matches)
+        print("self.doc_id_prefix",self.doc_id_prefix)
+        
+        # Create sent id
         doc_id = None
         for sent in sents:
             if self.doc_id_prefix in sent.metadata:
@@ -230,8 +250,11 @@ class TurPdtbTdbProcessor(AbstractTask):
         return sents
 
     def get_conllu2sentences(self, conllu):
-        lines = open(conllu).read()    
-        matches = re.sub(r"\n(\d+-\d+\t.*\n)", "", lines)
+        lines = open(conllu).readlines()    
+        matches = self._remove_line_start_with_two_token(lines)
+        matches = "".join(matches)
+        
+        # matches = re.sub(r"\n(\d+-\d+\t.*\n)", "", lines)
         sents = conllu_pkg.parse(matches)
         
         doc_id = None
@@ -249,7 +272,8 @@ class TurPdtbTdbProcessor(AbstractTask):
             # sent_id
             metadata =  sent.metadata
             sent_id = metadata[self.sent_id_prefix]  
-            text = sent.metadata["text"] # get text from text head
+            # text = sent.metadata["text"] # get text from text head
+            text = " ".join([obj["form"] for obj in sent])
             sentences[sent_id] = text
         return sentences
 
@@ -267,8 +291,10 @@ class ZhoPdtbCdtbProcessor(AbstractTask):
     def conllu_to_parsed_sentences(self, conllu):
         # remove the line with adjacent tokens
         #   exmaple: 7-8 arasındaki _ _ ..
-        lines = open(conllu).read()    
-        matches = re.sub(r"\n(\d+-\d+\t.*\n)", "", lines)
+        lines = open(conllu).readlines()
+
+        matches = self._remove_line_start_with_two_token(lines)
+        matches = "".join(matches)
         sents = conllu_pkg.parse(matches)
         
         doc_id = None
@@ -285,15 +311,8 @@ class ZhoPdtbCdtbProcessor(AbstractTask):
 
 
     def get_conllu2sentences(self, conllu):
-        lines = open(conllu).read()    
-        # matches = re.sub(r"\n(\d+-\d+\t.*\n)", "", lines)
-        
-        matches = list()
-        for l in lines:
-            if re.search(r"\d+-\d+", l):
-                pass
-            else:
-                matches.append(l)
+        lines = open(conllu).readlines()
+        matches = self._remove_line_start_with_two_token(lines)
         matches = "".join(matches)
 
         sents = conllu_pkg.parse(matches)

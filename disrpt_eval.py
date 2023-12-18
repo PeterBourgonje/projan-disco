@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import translate
 import json
 import argparse
@@ -45,6 +46,7 @@ Corpus2DocIdPrefix = {
     "zho.pdtb.cdtb": r'^# newdoc id = '
 }
 
+
 CORPORA = {
     "ita.pdtb.luna",
     "por.pdtb.crpc",
@@ -54,6 +56,59 @@ CORPORA = {
     "tur.pdtb.tedm",
     "zho.pdtb.cdtb"
 }
+
+def conll2sentences_nonmarked(conllu):
+    sentences = {}
+    lines = open(conllu, encoding='utf8').readlines()
+    """
+    Use this fuction if sentences are not marked at all (i.e. newline is the only clue) on the conllu format, like so:
+    18	网络	网络	NN	NN	_	19	nn	_	_
+    19	招生	招生	NN	NN	_	17	pobj	_	_
+
+    1	新华社	新华社	NR	NR	_	7	dep	_	_
+    2	福州	福州	NR	NR	_	7	dep	_	_
+    3	十二月	十二月	NT	NT	_	7	dep	_	_
+    """
+    sent = []
+    _id = 0
+    for i, line in enumerate(lines):
+        if re.match(r'^\s+', line):
+            sentences[_id] = ' '.join(sent)
+            sent = []
+            _id += 1
+        elif re.search(r'^\d+\t', line):
+            t = line.split('\t')[1]
+            sent.append(t)
+
+    return sentences
+
+
+def conllu2sentences_somewhatmarked(conllu):
+
+    sentences = {}
+    lines = open(conllu, encoding='utf8').readlines()
+    """
+    Use this fuction if sentences are not explicitly marked in the conllu format, like so:
+    # newutterance_id = 0705000001-3-2
+    1	dicevamo	dire	VERB	V	Mood=Ind|Number=Plur|Person=1|Tense=Pres|VerbForm=Fin	7	conj	7:conj	_
+    2	che	che	SCONJ	CS	_	12	mark	12:mark	_
+    3	hai	avere	VERB	V	Mood=Ind|Number=Sing|Person=2|Tense=Pres|VerbForm=Fin	10	ccomp	10:ccomp	_
+    4	problemi	problema	NOUN	S	Gender=Masc|Number=Plur	12	obj	12:obj	_
+    5	di	di	ADP	E	_	15	mark	15:mark	_
+    """
+    sent = []
+    _id = ''
+    for i, line in enumerate(lines):
+        if re.search(r'^# newutterance_id', line):
+            sentences[_id] = ' '.join(sent)
+            sent = []
+            _id = re.sub(r'^# newutterance_id = ', '', line).strip()
+        elif re.search(r'^\d+\t', line):
+            t = line.split('\t')[1]
+            sent.append(t)
+
+    return sentences
+
 
 
 def dump_translation(conllu, out, dump_translation_dir, args):
@@ -67,19 +122,25 @@ def dump_translation(conllu, out, dump_translation_dir, args):
 
     #translator = translate.Translator()
     translator = translate.AutoTranslator.get(translator_name=args.translator_api)
+
+    # sentences = None
+    # if format == 'marked':
+    #     sentences = conllu2sentences(conllu)
+    # elif format == 'somewhat_marked':
+    #     sentences = conllu2sentences_somewhatmarked(conllu)
+    # elif format == 'non_marked':
+    #     sentences = conll2sentences_nonmarked(conllu)
+    # else:
+    #     sys.stderr.write('ERROR: Format "%s" unknown.\n' % format)
+    #     sys.exit()
+    # translator = translate.Translator()
+
     outdict = {}
     targetlang = 'EN-US' if args.translator_api == 'deepl' else 'en'
     for sid in tqdm(sentences, desc='Translating'):
-        # check we're passing sentence in correct way 
-        ### test block ###
-        # print(f"src sentence: {sentences[sid]}")
-        # outdict[sid] = {'src': "1 2 3", 'trg': "a b c"}
-        ### test block ###
-        print("inp",sentences[sid])
         # Calling translator
         translation = translator.translate(sentences[sid], targetlang) # 
         # translation = "translated: " + sentences[sid]
-        
         outdict[sid] = {'src': sentences[sid], 'trg': translation}
     
     if not os.path.exists(dump_translation_dir):
@@ -87,7 +148,6 @@ def dump_translation(conllu, out, dump_translation_dir, args):
     outname = os.path.join(dump_translation_dir, out)
 
     dumped_translation = json.dump(outdict, open(outname, 'w'), indent=2, ensure_ascii=False)
-    print(f"dumping translation to : {outname}")
     return dumped_translation
 
 
@@ -98,22 +158,15 @@ def get_texts_from_sentences(transdict, doc_id_pattern, sent_id_pattern):
     texts = {}
     src_text, trg_text = [], []
     dictlen = len(transdict.keys())
-    print(f"dictlen all keys", transdict.keys())
-    print(f"dictlen", dictlen)
     for i, sid in enumerate(transdict.keys()):
         sid_int = int(re.match(sent_id_pattern, sid).groups()[0])
         doc_id = re.match(doc_id_pattern, sid).groups()[0]
 
-        print("doc_id", doc_id)
-        print("sid_int",sid_int)
         if i > 0:
             prev_sid_int = int(re.match(sent_id_pattern, list(transdict.keys())[i-1]).groups()[0])
-            print("prev_sid_int",prev_sid_int)
-            print("sid_int", sid_int)
             if prev_sid_int >= sid_int:
                 prev_doc_id = re.match(doc_id_pattern, list(transdict.keys())[i-1]).groups()[0]
-                print("prev_doc_id", prev_doc_id)
-                print("yes prev_sid_int > sid_int")
+
                 texts[prev_doc_id] = (src_text, trg_text)
                 src_text = [transdict[sid]['src']]
                 trg_text = [transdict[sid]['trg']]
@@ -125,18 +178,9 @@ def get_texts_from_sentences(transdict, doc_id_pattern, sent_id_pattern):
             trg_text = [transdict[sid]['trg']]
     texts[doc_id] = (src_text, trg_text)
     
-    print("src", len(src_text), "tgt", len(trg_text))
-    print("texts.keys()",texts.keys())
-    for k,v in texts.items():
-        print("key", k)
-        for idx, sent in enumerate(texts[k]):
-            print(f"id: {idx}\nsentences", sent[0])
+
     # value is doc_id
     total_sents = [len(v[0]) for _,v in texts.items()] # ensure all examples 
-    print(total_sents)
-    print([len(v[1]) for _,v in texts.items()])
-    print("texts.keys()",texts.keys())
-    
     assert sum(total_sents) == dictlen
     return texts    
 
@@ -154,18 +198,7 @@ def parse_translations(translations, src_only_texts, doc_id_pattern, sent_id_pat
     """
     parsed = {}
     texts = get_texts_from_sentences(translations, doc_id_pattern, sent_id_pattern)
-
-    print("selecting 2 examples")
-    print(f"texts (disrpt_eval): {texts}") # dict
-    print(f"type(texts): {type(texts)}")
-    print(f"texts.keys(): {texts.keys()}")
-    
-    def preprocess(sent):
-        return sent.replace(".", " .").replace(",", " ,")
-    pd = project.ProjanDisco(args.translator_api)
-    
-    print("texts.keys()", texts.keys())
-    
+    pd = project.ProjanDisco(args.aligner_api , args.translator_api)
     for doc_id in tqdm(texts, desc="Processing docs"):
         src_sents_, trg_sents = texts[doc_id]
         src_sents = [s.split() for s in src_sents_]
@@ -175,21 +208,8 @@ def parse_translations(translations, src_only_texts, doc_id_pattern, sent_id_pat
         src_sents = src_only_texts[doc_id]
         assert len(src_sents) == len(src_sents) == len(trg_sents)
         
-        # src_sents, trg_sents = texts[doc_id]["src"], texts[doc_id]["trg"] # nested dict
-        # list of sequence of tokens , (batch_size, seq_len)
-        # `seq_len` is example-dependent integer
-        # src_sents = [src_sents.split()] 
-        # trg_sents = [trg_sents.split()]
-        
-        # print("src_sents", src_sents[:2])
-        # print("trg_sents", trg_sents[:2])     
         relations = pd.annotate(src_sents, trg_sents)
-        # print(f"src_sents (disrpt_eval): {src_sents}")
-        # print(f"trg_sents (disrpt_eval): {trg_sents}")
-        # print(f"relations (disrpt_eval): {relations}")
-        
         parsed[doc_id] = relations
-    pprint(f"parsed: {parsed}")
     dump_parser_dir = args.dump_parser_dir
     if not os.path.exists(dump_parser_dir):
         os.mkdir(dump_parser_dir)
@@ -204,15 +224,11 @@ def parsed2conllu(infile, parsed, args):
 
     docid2connectives = {}
     docid2condebug = {}
-    print("key in parsed", parsed.keys())
     for docid in parsed:
         connectives = {}
         condebug = {}
         for rel in parsed[docid]:
-            print("each rel", rel)
             if rel['Type'] == 'Explicit':
-                print("rel['Type'] == 'Explicit' !!!")
-                print("rel['Connective']")
 
                 if len(rel['Connective']['TokenList']) == 0:
                     pass
@@ -223,26 +239,22 @@ def parsed2conllu(infile, parsed, args):
         docid2connectives[docid] = connectives
         docid2condebug[docid] = condebug
     
-    print("docid2connectives", docid2connectives)
-    print("docid2condebug", docid2condebug)
     # output as conllu
     outfile_path = os.path.splitext(infile)[0] + '_discopyrojected.conllu'
     outfile_path = args.pred_output_dir + "/" + outfile_path.split("/")[-1]
-    print("outfile_path",outfile_path)
+
     outfile = open(outfile_path, 'w')
     lines = open(infile).readlines()
     lines = [re.sub('Seg=[BI]-Conn', '_', x) for x in lines]  # strip all existing annotations
     curdict = None
     curdebdict = None
     tc = 0
-    print("lines[:20]", lines[:20])
     for i, line in enumerate(lines):
         corpus = args.infile.split("/")[-1].split("_")[0]
         doc_id_prefix = Corpus2DocIdPrefix[corpus]
         # Assign token an index if new document
         if re.search(doc_id_prefix, line):
             docid = re.sub(doc_id_prefix, '', line).strip()
-            print("find new docid",docid)
             if docid in docid2connectives:
                 curdict = docid2connectives[docid]
                 curdebdict = docid2condebug[docid]
@@ -251,25 +263,15 @@ def parsed2conllu(infile, parsed, args):
             else:
                 pass
 
-        print(f"line id: {i}, line: {line}")
-        print("token cnt (id)", tc)
-        print("curdict", curdict)
-        print("curdebdict", curdebdict)
         if re.search(r'^\d+\t', line):
             if tc in curdict:
-                print("line.split(\t)[1]", line.split('\t')[1])
-                print("curdebdict[tc]", curdebdict[tc])
-                print(tc)
-                # assert line.split('\t')[1] == curdebdict[tc]
-                print("curdebdict[tc]", curdebdict[tc])
+                assert line.split('\t')[1] == curdebdict[tc]
                 line_with_label = '\t'.join(lines[i].split('\t')[:-1] + ['Seg=B-Conn\n'])
-                print("line_with_label",line_with_label)
                 lines[i] = line_with_label
                 if len(curdict[tc]) > 1:
                     for j, nt in enumerate(curdict[tc][1:]):
                         lines[i+j+1] = '\t'.join(lines[i+j+1].split('\t')[:-1] + ['Seg=I-Conn\n'])
             tok = line.split('\t')[1]
-            print(f"tc: {tc}, token: {tok}")
             tc += 1
 
     for line in lines:
@@ -284,6 +286,7 @@ def main():
     p.add_argument("--outname", type=str, default='por.pdtb.crpc_test.pt-en.json')
     p.add_argument("--dump_translation_dir", type=str, default='translated')
     p.add_argument("--dump_parser_dir", type=str, default='parsed')
+    p.add_argument("--aligner_api", type=str, default='simalign')
     p.add_argument("--translator_api", type=str, default='deepl')
     p.add_argument("--pred_output_dir", type=str, default='')
     args = p.parse_args()
@@ -305,18 +308,14 @@ def main():
     dump_translation_dir = args.dump_translation_dir
 
     # test dump file
-    # dump_translation(infile, outname, dump_translation_dir, args)
+    dump_translation(infile, outname, dump_translation_dir, args)
     translations = json.load(open(os.path.join(args.dump_translation_dir, outname)))
-    
-    print("translations", translations)
-    print("type(translations)", type(translations))
     
     parsed = parse_translations(translations, src_only_texts, doc_id_pattern, sent_id_pattern, args)
     parsed = json.load(open(os.path.join(args.dump_parser_dir, outname)))
-    print("parsed", parsed)
-    print("type(parsed)", type(parsed))
     
     parsed2conllu(infile, parsed, args)
+
     
 
 if __name__ == '__main__':
