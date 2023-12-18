@@ -147,7 +147,6 @@ def dump_translation(conllu, out, dump_translation_dir, args):
     if not os.path.exists(dump_translation_dir):
         os.mkdir(dump_translation_dir)
     outname = os.path.join(dump_translation_dir, out)
-
     dumped_translation = json.dump(outdict, open(outname, 'w'), indent=2, ensure_ascii=False)
     return dumped_translation
 
@@ -316,7 +315,6 @@ def main():
     parsed = json.load(open(os.path.join(args.dump_parser_dir, outname)))
     
     parsed2conllu(infile, parsed, args)
-
     
 
 if __name__ == '__main__':

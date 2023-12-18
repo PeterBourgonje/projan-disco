@@ -2,6 +2,7 @@ import translate
 import align
 import discoparse
 import json
+import spacy
 
 import time
 from pprint import pprint
@@ -91,7 +92,6 @@ class ProjanDisco:
                 for elem in relation:
                     # ignoring CharacterSpanList altogether
                     if isinstance(relation[elem], dict) and 'TokenList' in relation[elem]:
-                        # TODO: suspect this might instead need to be the line below instead of what's currently active.
                         # aligned_tokens = [[a[1] for a in alignments if a[0] == t] for t in relation[elem]['TokenList']]
                         aligned_tokens = [[a[0] for a in alignments if a[1] == t] for t in relation[elem]['TokenList']]
                         aligned_tokens = sorted(list(set([t for tl in aligned_tokens for t in tl])))
@@ -107,11 +107,23 @@ class ProjanDisco:
 
 
 def main():
-    
+
+    """
     inp = ['Die Aktienkurse sind seit letztem Monat gestiegen .'.split(), 'Obwohl die Wirtschaft allgemein rückläufig ist .'.split()]
     trans = ['Stock prices have risen since last month .'.split(), 'Although the economy is generally declining .'.split()] # would normally get this from translator
     pd = ProjanDisco()
     projected = pd.annotate(inp, trans)
+    print(projected)
+    """
+    nlp_de = spacy.load('de_core_news_sm')
+    trans = translate.Translator()
+
+    input_text = 'Obwohl die Wirtschaft allgemein rückläufig ist, sind die Aktienkurse seit letztem Monat gestiegen.'
+
+    src_sentences = [[t.text for t in s] for s in nlp_de(input_text).sents]
+    trg_sentences = [trans.translate(' '.join(s), 'EN-US').split() for s in src_sentences]
+    pd = ProjanDisco()
+    projected = pd.annotate(src_sentences, trg_sentences)
     print(projected)
 
 
