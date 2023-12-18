@@ -1,5 +1,7 @@
 # projan-disco
 
+[**Prerequisites**](#prerequisites) | [**Usage**](#usage) | [**Reproduce Main Result**](#reproduce-main-result)]
+
 A pipeline for multi-lingual Shallow Discourse Parsing, based on annotation projection.
 
 # Prerequisites
