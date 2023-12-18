@@ -71,3 +71,68 @@ This snippet would return:
 ]
 ```
 
+# Reproduce Main Result
+
+To reproduce the results from Table 2, follow these steps and set the `PATH` according to your repository. Clone the official [sharedtask2023 repo](https://github.com/disrpt/sharedtask2023) to get evaluation scirpt.
+
+### Corpora
+
+The table displays seven corpora used in Table 2:
+
+| Corpus          | Language   |
+| --------------- | ---------- |
+| ita.pdtb.luna   | Italian    |
+| por.pdtb.crpc   | Portuguese |
+| por.pdtb.tedm   | Portuguese |
+| tha.pdtb.tdtb   | Thai       |
+| tur.pdtb.tdb    | Turkish    |
+| tur.pdtb.tedm   | Turkish    |
+| zho.pdtb.cdtb   | Chinese    |
+
+### Translating and Projecting Annotation
+
+`disrpt_eval.py` performs both translation and projecting annotation to the given non-English test files. We save intermediate files for translation results and parsing results with the filename specified by `outname`. The two files will be saved in `--dump_translation_dir` and `--dump_trans_dir` for easier analysis of potential misannotations.
+
+Note that to change the API of the translator or aligner, one needs to specify the corresponding flag name.
+
+* `--translator_api` supports `deepl` and`google`
+* `--aligner_api` supports `simalign` and `awesome`
+
+Make sure to set the API key for using the DeepL translator if you specify using the DeepL translator. Google translator is API-free. Also make sure you use identical port, e.g. 8080, to `discorpase.py.py` as port of docker container. 
+
+Run the following sample code to get annotation on `tur.pdtb.tedm_test.conllu`:
+
+```bash
+python disrpt_eval.py \
+    --infile=PATH/tur.pdtb.tedm_test.conllu \
+    --outname=PATH/tur.pdtb.tedm_test.pt-en.json \
+    --dump_translation_dir=PATH \
+    --dump_parser_dir=PATH \
+    --aligner_api=simalign \
+    --translator_api=deepl \
+    --pred_output_dir=PATH
+```
+
+Once the program is done, a projection result will be saved in the directory of pred_output_dir with `_discopyrojected.conllu` as the file ending. For instance, `pred_output_dir/tur.pdtb.tedm_test_discopyrojected.conllu`.
+
+
+### Evaluation
+
+We evaluate connective identification by one token per line, with no sentence breaks (default *.tok format) using the .tok gold file.
+
+Run the command to convert PATH/por.pdtb.crpc_test_discopyrojected.conllu to .tok. This will save a .tok file as the gold file in sharedtask2023.
+
+```bash
+python convert_to_tok_file \
+    --infile=pred_output_dir/tur.pdtb.tedm_test_discopyrojected.conllu
+```
+
+Next, run the official evaluation script with the command, and you will get the evaluation score.
+
+```
+EXPORT PREDS=PATH/tur.pdtb.tedm_test_discopyrojected.tok
+EXPORT GOLD=PATH/tur.pdtb.tedm_test.tok
+python3 PATH/sharedtask2023/utils/seg_eval.py $GOLD $PREDS
+```
+
+
