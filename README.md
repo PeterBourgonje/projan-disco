@@ -1,6 +1,6 @@
 # projan-disco
 
-[**Prerequisites**](#prerequisites) | [**Usage**](#usage) | [**Reproduce Main Result**](#reproduce-main-result)]
+[**Prerequisites**](#prerequisites) | [**Usage**](#usage) | [**Evaluation**](#evaluation)]
 
 A pipeline for multi-lingual Shallow Discourse Parsing, based on annotation projection.
 
@@ -73,13 +73,16 @@ This snippet would return:
 ]
 ```
 
-# Reproduce Main Result
+# Evaluation
 
-To reproduce the results from Table 2, follow these steps and set the `PATH` according to your repository. Clone the official [sharedtask2023 repo](https://github.com/disrpt/sharedtask2023) to get evaluation scirpt.
+The following sections describe how to reproduce the results from our paper.
+
+Clone the official [sharedtask2023 repository](https://github.com/disrpt/sharedtask2023) to get the data and [evaluation script](https://github.com/disrpt/sharedtask2023/blob/main/utils/seg_eval.py). Note that some corpora are behind LDC paywall, and the [process_underscores.py](https://github.com/disrpt/sharedtask2023/blob/main/utils/process_underscores.py) script will need to be run in order to insert the actual tokens.
+Set the `PATH` according to where you cloned the shared task repository on your machine. 
 
 ### Corpora
 
-The table displays seven corpora used in Table 2:
+In our paper, we include the following seven corpora:
 
 | Corpus          | Language   |
 | --------------- | ---------- |
@@ -93,19 +96,19 @@ The table displays seven corpora used in Table 2:
 
 ### Translating and Projecting Annotation
 
-`disrpt_eval.py` performs both translation and projecting annotation to the given non-English test files. We save intermediate files for translation results and parsing results with the filename specified by `outname`. The two files will be saved in `--dump_translation_dir` and `--dump_trans_dir` for easier analysis of potential misannotations.
+`eval/disrpt_eval.py` projects annotations to the given non-English input file. Intermediate files for translation results and parsing results are saved for intermediate analysis, under the filename specified by `outname`. The two files will be saved in `--dump_translation_dir` and `--dump_trans_dir`.
 
-Note that to change the API of the translator or aligner, one needs to specify the corresponding flag name.
+To change the API of the translator or aligner, specify the corresponding flag name.
 
 * `--translator_api` supports `deepl` and`google`
 * `--aligner_api` supports `simalign` and `awesome`
 
-Make sure to set the API key for using the DeepL translator if you specify using the DeepL translator. Google translator is API-free. Also make sure you use identical port, e.g. 8080, to `discorpase.py.py` as port of docker container. 
+Make sure to set the API key is you are using the DeepL translator (either hard-coded, or export it as a system environment variable, see the first few lines of `translate.py`). For Google Translate, no API key is needed. Also make sure that the port number in the code (8080) matches that of the docker container running discopy. 
 
-Run the following sample code to get annotation on `tur.pdtb.tedm_test.conllu`:
+Run the following sample code to get annotations projected for `tur.pdtb.tedm_test.conllu`:
 
 ```bash
-python disrpt_eval.py \
+python eval/disrpt_eval.py \
     --infile=PATH/tur.pdtb.tedm_test.conllu \
     --outname=PATH/tur.pdtb.tedm_test.pt-en.json \
     --dump_translation_dir=PATH \
@@ -115,21 +118,21 @@ python disrpt_eval.py \
     --pred_output_dir=PATH
 ```
 
-Once the program is done, a projection result will be saved in the directory of pred_output_dir with `_discopyrojected.conllu` as the file ending. For instance, `pred_output_dir/tur.pdtb.tedm_test_discopyrojected.conllu`.
+When evaluation is completed, the result will be saved in the directory of `pred_output_dir` with `_discopyrojected.conllu` appended to the input filename. For instance, `pred_output_dir/tur.pdtb.tedm_test_discopyrojected.conllu`.
 
 
-### Evaluation
+### Format Conversion
 
 We evaluate connective identification by one token per line, with no sentence breaks (default *.tok format) using the .tok gold file.
 
-Run the command to convert PATH/por.pdtb.crpc_test_discopyrojected.conllu to .tok. This will save a .tok file as the gold file in sharedtask2023.
+Run the following command to convert PATH/por.pdtb.crpc_test_discopyrojected.conllu to .tok. This will save a .tok file that can be used to compare against the gold file from the shared task data set.
 
 ```bash
 python convert_to_tok_file \
     --infile=pred_output_dir/tur.pdtb.tedm_test_discopyrojected.conllu
 ```
 
-Next, run the official evaluation script with the command, and you will get the evaluation score.
+Next, run the official evaluation script to get the final score.
 
 ```
 EXPORT PREDS=PATH/tur.pdtb.tedm_test_discopyrojected.tok
