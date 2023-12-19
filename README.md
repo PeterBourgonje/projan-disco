@@ -27,14 +27,14 @@ import spacy
 import translate
 import project
 
-nlp_de = spacy.load('de_core_news_sm') # spacy is only used for sentence-splitting and tokenization. Feel free to use your own, preferred method here instead.
-trans = translate.Translator()
-pd = ProjanDisco()
+nlp_de = spacy.load('de_core_news_sm')
+trans = translate.AutoTranslator.get('deepl')
+pd = project.ProjanDisco()
 
 input_text = 'Die Aktienkurse sind seit letztem Monat gestiegen. Obwohl die Wirtschaft allgemein rückläufig ist.'
-
 src_sentences = [[t.text for t in s] for s in nlp_de(input_text).sents]
-trg_sentences = [trans.translate(' '.join(s), 'EN-US').split() for s in src_sentences] # this does white-space tokenization. Might want to use something more sophisticated here instead.
+trg_sentences = [trans.translate(' '.join(s), 'EN-US').split() for s in src_sentences]
+
 projected = pd.annotate(src_sentences, trg_sentences)
 
 import json
