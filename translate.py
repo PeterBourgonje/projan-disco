@@ -4,10 +4,11 @@ import os
 import requests
 from collections import OrderedDict
 from googletrans import Translator
-# export DEEPL_API_KEY=deepl-key...
-API_KEY=""
-DEEPL_AUTH_KEY = os.environ.get(API_KEY)
-DEEPL_AUTH_KEY = "216ab5ba-956a-2adf-8489-86cf1aa48908:fx"
+# either get DeepL API key from sys env like so (on command line):
+# export DEEPL_API_KEY=<your-deepl-key...>
+DEEPL_AUTH_KEY = os.environ.get('DEEPL_API_KEY')
+# or directly hard-code it here, like so:
+DEEPL_AUTH_KEY = "<your-deepl-key...>"
 
 """
 A home-grown MT engine hosted through ngrok can easily be plugged in...

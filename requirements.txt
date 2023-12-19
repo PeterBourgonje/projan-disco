@@ -55,3 +55,4 @@ typing-extensions==4.7.1
 urllib3==2.0.4
 wasabi==1.1.2
 conllu==4.5.3
+googletrans==3.0.0
