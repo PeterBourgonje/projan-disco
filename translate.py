@@ -8,7 +8,7 @@ from googletrans import Translator
 # export DEEPL_API_KEY=<your-deepl-key...>
 DEEPL_AUTH_KEY = os.environ.get('DEEPL_API_KEY')
 # or directly hard-code it here, like so:
-DEEPL_AUTH_KEY = "<your-deepl-key...>"
+#DEEPL_AUTH_KEY = "<your-deepl-key...>"
 
 """
 A home-grown MT engine hosted through ngrok can easily be plugged in...

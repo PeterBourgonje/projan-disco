@@ -10,7 +10,7 @@ import spacy
 
 class ProjanDisco:
     def __init__(self, aligner_name="simalign", translator_name="deepl"):
-        self.translator = translate.AutoTranslator.get(translator_name=translator_name)
+        #self.translator = translate.AutoTranslator.get(translator_name=translator_name)
         self.aligner = align.Aligner(aligner_name)
         self.discopy = discoparse.Discopy()
 
@@ -115,13 +115,14 @@ def main():
     print(projected)
     """
     nlp_de = spacy.load('de_core_news_sm')
-    trans = translate.Translator()
+    trans = translate.AutoTranslator.get('deepl')
+    pd = ProjanDisco()
 
-    input_text = 'Obwohl die Wirtschaft allgemein rückläufig ist, sind die Aktienkurse seit letztem Monat gestiegen.'
+    input_text = 'Die Aktienkurse sind seit letztem Monat gestiegen. Obwohl die Wirtschaft allgemein rückläufig ist.'
 
     src_sentences = [[t.text for t in s] for s in nlp_de(input_text).sents]
     trg_sentences = [trans.translate(' '.join(s), 'EN-US').split() for s in src_sentences]
-    pd = ProjanDisco()
+
     projected = pd.annotate(src_sentences, trg_sentences)
     print(projected)
 

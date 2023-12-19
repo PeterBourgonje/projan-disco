@@ -20,7 +20,7 @@ def batch(inp, batch_size):
 class Discopy:
 
     def __init__(self):
-        self.url = "http://localhost:1133/api/parser/tokens"
+        self.url = "http://localhost:8080/api/parser/tokens"
         self.headers = {
             'accept': 'application/json',
             'Content-Type': 'application/json'
@@ -36,7 +36,7 @@ class Discopy:
 
     def parse(self, sentences):
         data = json.dumps({'sentences': sentences})
-        print(f"data: {data}")
+        #print(f"data: {data}")
 
         final_response = {'docID': None,
                           'meta': None,
