@@ -4,8 +4,8 @@ import discoparse
 import json
 import spacy
 
-import time
-from pprint import pprint
+#import time
+#from pprint import pprint
 
 
 class ProjanDisco:
@@ -14,7 +14,8 @@ class ProjanDisco:
         self.aligner = align.Aligner(aligner_name)
         self.discopy = discoparse.Discopy()
 
-    def merge_batches(self, batches):
+    @staticmethod
+    def merge_batches(batches):
         response = {'docID': batches[-1]['docID'], 'meta': batches[-1]['meta'],
                     'text': '\n'.join(b['text'] for b in batches), 'sentences': [], 'relations': []}
         sentences = []
@@ -65,15 +66,15 @@ class ProjanDisco:
             #prev_index = batch_index
         #final_batch = trans[prev_index:len(trans)]
         #parsed_batches.append(json.loads(self.discopy.parse(final_batch)))
-        #discopy_response = self.merge_batches(parsed_batches)
+        #discopy_response = ProjanDisco.merge_batches(parsed_batches)
         
-        inp_tmp = [ " ".join(s) for s in trans]
-        inp_tmp = trans
-        discopy_result   = self.discopy.parse(inp_tmp)
+        #inp_tmp = [" ".join(s) for s in trans]
+        #inp_tmp = trans
+        discopy_result = self.discopy.parse(trans)
         
         # Might need check if 
         discopy_response = json.loads(discopy_result)
-        rel = discopy_response["relations"]
+        #rel = discopy_response["relations"]
         
         # Since translation is done sentence-by-sentence, number of sentences in srg and trg text should be the same
         assert len(inp) == len(trans)
@@ -102,8 +103,6 @@ class ProjanDisco:
                         prel[elem] = relation[elem]
                 projected_relations.append(prel)
         return projected_relations
-
-
 
 
 def main():
