@@ -71,7 +71,7 @@ def process_file(fh):
 
 
 def main():
-    fh = r"C:\Users\bourg\Downloads\align_arguments.txt"
+    fh = r"align_arguments.txt"
     process_file(fh)
 
 
