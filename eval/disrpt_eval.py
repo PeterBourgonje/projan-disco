@@ -1,6 +1,9 @@
 import os
 import re
 import sys
+currentdir = os.path.dirname(os.path.abspath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0, parentdir)
 import translate
 import json
 import argparse
@@ -240,8 +243,9 @@ def parsed2conllu(infile, parsed, args):
         docid2condebug[docid] = condebug
     
     # output as conllu
-    outfile_path = os.path.splitext(infile)[0] + '_discopyrojected.conllu'
-    outfile_path = args.pred_output_dir + "/" + outfile_path.split("/")[-1]
+    #outfile_path = os.path.splitext(infile)[0] + '_discopyrojected.conllu'
+    #outfile_path = args.pred_output_dir + "/" + outfile_path.split("/")[-1]
+    outfile_path = os.path.join(args.pred_output_dir, os.path.basename(infile) + '_discopyrojected.conllu')
 
     outfile = open(outfile_path, 'w')
     lines = open(infile).readlines()
@@ -250,7 +254,8 @@ def parsed2conllu(infile, parsed, args):
     curdebdict = None
     tc = 0
     for i, line in enumerate(lines):
-        corpus = args.infile.split("/")[-1].split("_")[0]
+        #corpus = args.infile.split("/")[-1].split("_")[0]
+        corpus = os.path.basename(args.infile).split('_')[0]
         doc_id_prefix = Corpus2DocIdPrefix[corpus]
         # Assign token an index if new document
         if re.search(doc_id_prefix, line):
@@ -292,11 +297,12 @@ def main():
     args = p.parse_args()
 
     # get the regular expression pattern to get doc/sent id
-    corpus = args.infile.split("/")[-1].split("_")[0]
-    
+    #corpus = args.infile.split("/")[-1].split("_")[0]
+    corpus = os.path.basename(args.infile).split('_')[0]
+
     sent_id_pattern = Corpus2SentIdPattern[corpus]
     doc_id_pattern = Corpus2DocIdPattern[corpus]
-    
+
     # instanize class
     corpus_processor = AutoTask.get(corpus)
     # This is done for potentially better alignment by using pre-tokenized tokens (token in each line)

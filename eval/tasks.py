@@ -28,6 +28,7 @@ import logging
 import numpy as np
 import re
 import conllu as conllu_pkg
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -364,6 +365,8 @@ class AutoTask:
     def get(self, corpus_name):
         if corpus_name in CORPUS_MAPPING:
             return CORPUS_MAPPING[corpus_name]()
+        elif os.path.basename(corpus_name) in CORPUS_MAPPING:
+            return CORPUS_MAPPING[os.path.basename(corpus_name)]()
         raise ValueError(
             "Unrecognized corpus {} for AutoTask: {}.\n"
             "Task name should be one of {}.".format(
