@@ -140,4 +140,31 @@ EXPORT GOLD=PATH/tur.pdtb.tedm_test.tok
 python3 PATH/sharedtask2023/utils/seg_eval.py $GOLD $PREDS
 ```
 
+### Citation
+
+If you use the code in this repository, please cite the following:
+
+```
+@inproceedings{bourgonje-lin-2024-projecting,
+    title = "Projecting Annotations for Discourse Relations: Connective Identification for Low-Resource Languages",
+    author = "Bourgonje, Peter  and
+      Lin, Pin-Jie",
+    editor = "Strube, Michael  and
+      Braud, Chloe  and
+      Hardmeier, Christian  and
+      Li, Junyi Jessy  and
+      Loaiciga, Sharid  and
+      Zeldes, Amir  and
+      Li, Chuyuan",
+    booktitle = "Proceedings of the 5th Workshop on Computational Approaches to Discourse (CODI 2024)",
+    month = mar,
+    year = "2024",
+    address = "St. Julians, Malta",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2024.codi-1.4",
+    pages = "39--49",
+    abstract = "We present a pipeline for multi-lingual Shallow Discourse Parsing. The pipeline exploits Machine Translation and Word Alignment, by translating any incoming non-English input text into English, applying an English discourse parser, and projecting the found relations onto the original input text through word alignments. While the purpose of the pipeline is to provide rudimentary discourse relation annotations for low-resource languages, in order to get an idea of performance, we evaluate it on the sub-task of discourse connective identification for several languages for which gold data are available. We experiment with different setups of our modular pipeline architecture and analyze intermediate results. Our code is made available on GitHub.",
+}
+
+```
 
