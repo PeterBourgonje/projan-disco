@@ -140,7 +140,7 @@ EXPORT GOLD=PATH/tur.pdtb.tedm_test.tok
 python3 PATH/sharedtask2023/utils/seg_eval.py $GOLD $PREDS
 ```
 
-### Citation
+# Citation
 
 If you use the code in this repository, please cite the following:
 
