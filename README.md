@@ -1,6 +1,6 @@
 # projan-disco
 
-[**Prerequisites**](#prerequisites) | [**Usage**](#usage) | [**Evaluation**](#evaluation)]
+[**Prerequisites**](#prerequisites) | [**Usage**](#usage) | [**Evaluation**](#evaluation) | [**Citation**](#citation)]
 
 A pipeline for multi-lingual Shallow Discourse Parsing, based on annotation projection.
 
